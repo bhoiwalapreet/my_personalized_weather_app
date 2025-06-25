@@ -1,6 +1,31 @@
 import React, {useState} from "react";
+import initialBg from "../assets/initial_background.jpg"
+import sunnyBg from "../assets/sunny.png"
+import cloudyBg from "../assets/cloudy.png"
+import rainyBg from "../assets/rainy.png"
+import thunderstormsBg from "../assets/thunderstorms.png"
+import { useEffect } from "react";
 
 // API key for autocomplete: '973a00de27msh125ebff668ef7b6p1f780djsned0a648ac927'
+
+
+const getBackgroundImage = (main, description) => {
+    const descLower = description.toLowerCase();
+    const mainLower = main.toLowerCase();
+    if(mainLower === "clear") return sunnyBg;
+    if(mainLower === "clouds") {
+        if(descLower.includes("few") || descLower.includes("scattered")) {
+            return sunnyBg;
+        }
+        return cloudyBg;
+    }
+    if(mainLower === "thunderstorm") return thunderstormsBg;
+    if(mainLower === "rain") return rainyBg;
+    return initialBg; 
+
+};
+
+
 function SearchWeather() {
   // ------------- STATE HOOKS ------------------
     const [city, setCity] = useState(""); 
@@ -9,7 +34,26 @@ function SearchWeather() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [suggestions, setSuggestions] = useState([]);
+    const [background, setBackground] = useState(initialBg);
 
+    useEffect(() => {
+        // useeffect is used for weather update
+        if(weather && weather.weather && weather.weather.length > 0){
+            //Only run the code inside if all of this data exists
+            const main = weather.weather[0].main;
+            const description = weather.weather[0].description;
+            const newBg = getBackgroundImage(main, description);
+            setBackground(newBg);
+        }
+        
+
+    }
+    , [weather]);
+    useEffect(() => {
+        if (selectedCity) {
+            fetchWeather();
+        }
+    }, [selectedCity]);
 
   // ------------- FETCH WEATHER FUNCTION ------------------
 const fetchWeather = () => {
@@ -27,7 +71,7 @@ const fetchWeather = () => {
     const url = selectedCity
     ? `https://api.openweathermap.org/data/2.5/weather?lat=${selectedCity.latitude}&lon=${selectedCity.longitude}&units=imperial&appid=e59edaa7355ce7655533af75a66af53b`
     // for if user selects city from suggestions
-    : `https://api.openweathermap.org/data/2.5/weather?q=${city},US&units=imperial&appid=e59edaa7355ce7655533af75a66af53b`;
+    : `https://api.openweathermap.org/data/2.5/weather?q=${city.split(",")[0]},US&units=imperial&appid=e59edaa7355ce7655533af75a66af53b`;
     // if not, just use city name 
 
     //Catch and handle any errors that still happen during the request
@@ -52,6 +96,7 @@ const fetchWeather = () => {
 
   // ------------- FETCH AUTOCOMPLETE SUGGESTIONS FUNCTION ------------------
 
+  //fetch weather
 const fetchSuggestions = (query) => {
     // query is the text user types
     if(!query) {
@@ -78,9 +123,30 @@ const fetchSuggestions = (query) => {
 
 };
 
+//set weather
 
+
+
+// display
 return (
-    <div>
+    <div
+     style= {{
+        backgroundImage: `url(${background})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        minHeight: "100vh",
+        padding: "20px"
+     }}
+    >
+    <h1 style={{
+        color: "#f0f0f0",
+        textShadow: "2px 2px 4px rgba(0,0,0,0.6)",
+        textAlign: "center",
+        marginBottom: "20px"
+
+    }}>
+        Welcome to my weather app!
+    </h1>
       <h2>Search Weather by City</h2>
 
       <div style={{ 
@@ -93,8 +159,9 @@ return (
             type="text" 
             value={city}
             onChange={(e) => {
-            const inputValue = e.target.value;
+            const inputValue = e.target.value; 
             setCity(inputValue);
+            setSelectedCity(null);
             fetchSuggestions(inputValue);
             }}
        />
@@ -152,7 +219,7 @@ return (
         {/*show status*/}
 
         {loading && <p>Loading..</p>}
-        {error && <p style={{color: "red"}}>{error}</p>}
+        {error && <p style={{color: "purple"}}>{error}</p>}
 
         {weather && (
             <div>
