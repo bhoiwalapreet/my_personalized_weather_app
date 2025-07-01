@@ -4,21 +4,33 @@ import sunnyBg from "../assets/sunny.png"
 import cloudyBg from "../assets/cloudy.png"
 import rainyBg from "../assets/rainy.png"
 import thunderstormsBg from "../assets/thunderstorms.png"
+import clearNight from "../assets/clearNight.jpg"
+import cloudynight from "../assets/cloudynight.png"
+import CurrentWeather from "./CurrentWeather";
+
+
 import { useEffect } from "react";
+
 
 // API key for autocomplete: '973a00de27msh125ebff668ef7b6p1f780djsned0a648ac927'
 
-
-const getBackgroundImage = (main, description) => {
+const isNight = (dt, sunrise, sunset) => {
+    return dt < sunrise || dt > sunset;
+}
+const getBackgroundImage = (main, description, isNight) => {
     const descLower = description.toLowerCase();
     const mainLower = main.toLowerCase();
-    if(mainLower === "clear") return sunnyBg;
-    if(mainLower === "clouds") {
-        if(descLower.includes("few") || descLower.includes("scattered")) {
-            return sunnyBg;
-        }
-        return cloudyBg;
+    if(mainLower === "clear") {
+        return  isNight ? clearNight : sunnyBg;
     }
+    if(mainLower === "clouds") {
+        if(descLower.includes("few") || (descLower.includes("scattered") || descLower.includes("broken"))) {
+
+           return isNight ? clearNight: sunnyBg;
+        }
+        return isNight ? cloudynight: cloudyBg;
+    }
+    if (mainLower === "haze" || mainLower === "mist" || mainLower === "fog") return cloudyBg;
     if(mainLower === "thunderstorm") return thunderstormsBg;
     if(mainLower === "rain") return rainyBg;
     return initialBg; 
@@ -42,7 +54,9 @@ function SearchWeather() {
             //Only run the code inside if all of this data exists
             const main = weather.weather[0].main;
             const description = weather.weather[0].description;
-            const newBg = getBackgroundImage(main, description);
+            const {dt, sys: {sunrise, sunset}} = weather;
+            const night = isNight(dt, sunrise, sunset);
+            const newBg = getBackgroundImage(main, description, night);
             setBackground(newBg);
         }
         
@@ -55,6 +69,8 @@ function SearchWeather() {
         }
     }, [selectedCity]);
 
+
+ 
   // ------------- FETCH WEATHER FUNCTION ------------------
 const fetchWeather = () => {
     setLoading(true); //show loading spinner 
@@ -212,7 +228,7 @@ return (
         </ul>
        )}
        </div>
-
+       
         {/*button to fetch weather */}
         <button onClick={fetchWeather}>Get Weather</button>
 
@@ -221,20 +237,9 @@ return (
         {loading && <p>Loading..</p>}
         {error && <p style={{color: "purple"}}>{error}</p>}
 
-        {weather && (
-            <div>
-                <h3>
-                    Weather in {selectedCity ? selectedCity.displayName: weather.name}</h3>
-                    {/* // If a selected city exists (user clicked a dropdown option), display full address.
-                    // Otherwise, just display the basic name returned by the weather API. */}
+        {weather && <CurrentWeather weather={weather} selectedCity={selectedCity} />}
 
-                    {/* OpenWeatherAPI responses */}
-                <p>Temperature: {weather.main.temp}°F</p>
-                <p>Description: {weather.weather[0].description}</p>
-                <p>Humidity: {weather.main.humidity}%</p>
-                <p>Wind: {weather.wind.speed} mph</p>
-        </div>
-        )}
+        
     </div> //end of rendered jsx
    ); //end of return
  } // end of function SearchWeather

@@ -1,0 +1,11 @@
+@keyframes bounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-10px); }
+  }
+  
+  .bounce {
+    animation: bounce 1s infinite alternate;
+  }
+
+  
+  /* this is for the bouncing effect on the icons specified in SearchWeather.js */
